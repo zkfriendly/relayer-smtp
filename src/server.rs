@@ -29,9 +29,11 @@ pub async fn run_server() -> Result<(), actix_web::Error> {
         SERVER_CONFIG.get().unwrap().port
     );
     HttpServer::new(|| {
-        App::new()
-            .route("/ping", web::get().to(ping))
-            .route("/sendEmail", web::post().to(send_email))
+        App::new().service(
+            web::scope("/api")
+                .route("/ping", web::get().to(ping))
+                .route("/sendEmail", web::post().to(send_email)),
+        )
     })
     .bind(format!(
         "{}:{}",
