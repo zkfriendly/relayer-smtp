@@ -10,7 +10,11 @@ use strings::*;
 
 use anyhow::Result;
 use slog::{error, info};
-use std::{error::Error, fmt, sync::OnceLock};
+use std::{
+    error::Error,
+    fmt,
+    sync::{Arc, Mutex, OnceLock},
+};
 
 #[derive(Debug)]
 struct ActixErrorWrapper(String);
@@ -31,13 +35,13 @@ impl From<actix_web::Error> for ActixErrorWrapper {
 
 pub static SMTP_CONFIG: OnceLock<SmtpConfig> = OnceLock::new();
 pub static SERVER_CONFIG: OnceLock<ServerConfig> = OnceLock::new();
-pub static SMTP_CLIENT: OnceLock<SmtpClient> = OnceLock::new();
+pub static SMTP_CLIENT: OnceLock<Arc<Mutex<SmtpClient>>> = OnceLock::new();
 
 pub async fn run(config: RelayerSMTPConfig) -> Result<()> {
     SMTP_CONFIG.set(config.smtp_config.clone()).unwrap();
     SERVER_CONFIG.set(config.server_config.clone()).unwrap();
     SMTP_CLIENT
-        .set(SmtpClient::new(config.smtp_config)?)
+        .set(Arc::new(Mutex::new(SmtpClient::new(config.smtp_config)?)))
         .unwrap();
 
     run_server().await.map_err(ActixErrorWrapper::from)?;

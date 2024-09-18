@@ -13,7 +13,8 @@ async fn send_email(event: web::Json<EmailMessage>) -> impl Responder {
     let event_data = event.into_inner();
     info!(LOG, "Received email to send: {:?}", event_data);
 
-    match SMTP_CLIENT.get().unwrap().send_new_email(event_data).await {
+    let smtp_client = SMTP_CLIENT.get().unwrap().lock().unwrap();
+    match smtp_client.send_new_email(event_data).await {
         Ok(message_id) => {
             HttpResponse::Ok().json(json!({"status": "success", "message_id": message_id}))
         }
