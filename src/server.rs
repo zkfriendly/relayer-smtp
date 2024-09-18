@@ -2,7 +2,6 @@ use crate::{error, info};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use relayer_utils::LOG;
 use serde_json::json;
-use tokio::task;
 
 use crate::{EmailMessage, SERVER_CONFIG, SMTP_CLIENT};
 
@@ -13,12 +12,18 @@ async fn ping() -> impl Responder {
 async fn send_email(event: web::Json<EmailMessage>) -> impl Responder {
     let event_data = event.into_inner();
     info!(LOG, "Received email to send: {:?}", event_data);
-    task::spawn(async move {
-        if let Err(e) = SMTP_CLIENT.get().unwrap().send_new_email(event_data).await {
-            error!(LOG, "Failed to send email: {}", e);
+
+    match SMTP_CLIENT.get().unwrap().send_new_email(event_data).await {
+        Ok(message_id) => {
+            HttpResponse::Ok().json(json!({"status": "success", "message_id": message_id}))
         }
-    });
-    HttpResponse::Ok().json(json!({"status": "success"}))
+        Err(e) => {
+            error!(LOG, "Failed to send email: {}", e);
+            HttpResponse::InternalServerError().json(json!({"status": "error",
+                "message": format!("Failed to send email: {}", e)
+            }))
+        }
+    }
 }
 
 pub async fn run_server() -> Result<(), actix_web::Error> {
