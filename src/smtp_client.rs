@@ -1,10 +1,11 @@
 use anyhow::Result;
 use lettre::{
-    message::{Attachment, Mailbox, MultiPart, SinglePart},
+    message::{header, Attachment, Mailbox, MultiPart, SinglePart},
     transport::smtp::authentication::Credentials,
     Address, AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::SmtpConfig;
 
@@ -42,7 +43,7 @@ impl SmtpClient {
         Ok(Self { config, transport })
     }
 
-    pub async fn send_new_email(&self, email: EmailMessage) -> Result<()> {
+    pub async fn send_new_email(&self, email: EmailMessage) -> Result<String> {
         self.send_inner(
             email.to,
             email.subject,
@@ -64,13 +65,15 @@ impl SmtpClient {
         body_plain: String,
         body_html: String,
         body_attachments: Option<Vec<EmailAttachment>>,
-    ) -> Result<()> {
+    ) -> Result<String> {
         let from_mbox = Mailbox::new(None, self.config.id.parse::<Address>()?);
         let to_mbox = Mailbox::new(None, to.parse::<Address>()?);
 
+        let message_id = format!("<{}@{}>", Uuid::new_v4(), self.config.message_id_domain);
         let mut email_builder = Message::builder()
             .from(from_mbox)
             .subject(subject)
+            .header(header::MessageId::from(message_id.clone()))
             .to(to_mbox);
         if let Some(reference) = reference {
             email_builder = email_builder.references(reference);
@@ -95,6 +98,6 @@ impl SmtpClient {
 
         self.transport.send(email).await?;
 
-        Ok(())
+        Ok(message_id)
     }
 }
