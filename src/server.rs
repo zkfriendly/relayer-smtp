@@ -28,11 +28,12 @@ async fn send_email(event: web::Json<EmailMessage>) -> impl Responder {
 }
 
 pub async fn run_server() -> Result<(), actix_web::Error> {
+    let server_config = SERVER_CONFIG.get().unwrap();
     info!(
         LOG,
         "Starting server at {}:{}",
-        SERVER_CONFIG.get().unwrap().host,
-        SERVER_CONFIG.get().unwrap().port
+        server_config.host,
+        server_config.port
     );
     HttpServer::new(|| {
         App::new().service(
@@ -43,8 +44,8 @@ pub async fn run_server() -> Result<(), actix_web::Error> {
     })
     .bind(format!(
         "{}:{}",
-        SERVER_CONFIG.get().unwrap().host,
-        SERVER_CONFIG.get().unwrap().port
+        server_config.host,
+        server_config.port
     ))?
     .run()
     .await?;

@@ -51,8 +51,37 @@ cargo run
 Health check endpoint.
 
 **Response:**
+
 ```
 Hello, world!
 ```
 
 ### POST /api/sendEmail
+
+Send an email using the SMTP relay service.
+
+**Sample Body:**
+
+```bash
+curl -X POST http://localhost:3000/api/sendEmail \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "recipient@example.com",
+    "subject": "Test Email",
+    "body_plain": "This is a test email.",
+    "body_html": "<html><body><p>This is a test email.</p></body></html>",
+    "reference": null,
+    "reply_to": null,
+    "body_attachments": null
+  }'
+
+```
+
+**Success Response:**
+
+```json
+{
+  "message_id": "<c4a4bb20-2948-4bfa-9108-62531f9d370f@mail.gmail.com>",
+  "status": "success"
+}
+```
