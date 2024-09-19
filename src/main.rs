@@ -4,5 +4,5 @@ use tokio;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    run(RelayerSMTPConfig::new()).await
+    run(RelayerSMTPConfig::new().unwrap()).await
 }

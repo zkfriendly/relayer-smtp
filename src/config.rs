@@ -1,5 +1,6 @@
 use crate::*;
 
+use anyhow::{anyhow, Result};
 use std::env;
 
 use dotenv::dotenv;
@@ -25,35 +26,42 @@ pub struct RelayerSMTPConfig {
 }
 
 impl SmtpConfig {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self> {
         dotenv().ok();
 
-        Self {
-            domain_name: env::var(SMTP_DOMAIN_NAME_KEY).unwrap(),
-            id: env::var(SMTP_LOGIN_ID_KEY).unwrap(),
-            password: env::var(SMTP_LOGIN_PASSWORD_KEY).unwrap(),
+        Ok(Self {
+            domain_name: env::var(SMTP_DOMAIN_NAME_KEY)
+                .map_err(|e| anyhow!("Failed to get SMTP_DOMAIN_NAME: {}", e))?,
+            id: env::var(SMTP_LOGIN_ID_KEY)
+                .map_err(|e| anyhow!("Failed to get SMTP_LOGIN_ID: {}", e))?,
+            password: env::var(SMTP_LOGIN_PASSWORD_KEY)
+                .map_err(|e| anyhow!("Failed to get SMTP_LOGIN_PASSWORD: {}", e))?,
             message_id_domain: env::var(MESSAGE_ID_DOMAIN_KEY)
                 .unwrap_or_else(|_| "mail.gmail.com".to_string()),
-        }
+        })
     }
 }
 
 impl ServerConfig {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self> {
         dotenv().ok();
 
-        Self {
-            host: env::var(SERVER_HOST_KEY).unwrap(),
-            port: env::var(SERVER_PORT_KEY).unwrap().parse().unwrap(),
-        }
+        Ok(Self {
+            host: env::var(SERVER_HOST_KEY)
+                .map_err(|e| anyhow!("Failed to get SERVER_HOST: {}", e))?,
+            port: env::var(SERVER_PORT_KEY)
+                .map_err(|e| anyhow!("Failed to get SERVER_PORT: {}", e))?
+                .parse()
+                .map_err(|e| anyhow!("Failed to parse SERVER_PORT: {}", e))?,
+        })
     }
 }
 
 impl RelayerSMTPConfig {
-    pub fn new() -> Self {
-        Self {
-            smtp_config: SmtpConfig::new(),
-            server_config: ServerConfig::new(),
-        }
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            smtp_config: SmtpConfig::new()?,
+            server_config: ServerConfig::new()?,
+        })
     }
 }

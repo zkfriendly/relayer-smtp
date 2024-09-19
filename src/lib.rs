@@ -38,12 +38,15 @@ pub static SERVER_CONFIG: OnceLock<ServerConfig> = OnceLock::new();
 pub static SMTP_CLIENT: OnceLock<Arc<Mutex<SmtpClient>>> = OnceLock::new();
 
 pub async fn run(config: RelayerSMTPConfig) -> Result<()> {
-    SMTP_CONFIG.set(config.smtp_config.clone()).unwrap();
-    SERVER_CONFIG.set(config.server_config.clone()).unwrap();
+    SMTP_CONFIG
+        .set(config.smtp_config.clone())
+        .map_err(|_| anyhow::anyhow!("Failed to set SMTP_CONFIG"))?;
+    SERVER_CONFIG
+        .set(config.server_config.clone())
+        .map_err(|_| anyhow::anyhow!("Failed to set SERVER_CONFIG"))?;
     SMTP_CLIENT
         .set(Arc::new(Mutex::new(SmtpClient::new(config.smtp_config)?)))
-        .unwrap();
-
+        .map_err(|_| anyhow::anyhow!("Failed to set SMTP_CLIENT"))?;
     run_server().await.map_err(ActixErrorWrapper::from)?;
     Ok(())
 }
